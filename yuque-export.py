@@ -11,6 +11,7 @@
 """
 import asyncio
 import aiohttp
+import os
 from os.path import exists
 from datetime import datetime
 from yuque.api import get_book_stacks, test_session_status, get_docs, get_info, generate_markdown_tasks
@@ -48,17 +49,25 @@ def read_cookie():
 if __name__ == '__main__':
     start_program()
     # 判断config文件是否存在已经解析的session，如果存在则进行测试是否可以继续使用。
+    # 这里不方便切换用户
     if not exists('config/session'):
         with open('config/session', 'w') as f:
             f.write(read_cookie())
     else:
         with open('config/session', 'r') as f:
             yuque_session = f.read()
-    # * 判断是否过期
-    # if test_session_status():
-    #     pass
+        os.remove('config/session')
     # * 拉取目录
-    book_stacks_json = asyncio.run(get_book_stacks(yuque_session))
+    # * 判断Cookie是否有效
+    try:
+        book_stacks_json = asyncio.run(get_book_stacks(yuque_session))
+    except Exception as e:
+        print_colored_text(31, f"[*] {e}")
+        print_colored_text(31, "[*] 请检查cookie是否过期，或者未修改cookie.txt文件中的内容")
+        # 删除session缓存
+        if exists('config/session'):
+            os.remove('config/session')
+        exit(1)
     books = book_stacks_json['data'][0]['books']
     book_list = []
     print_colored_text(33, f"[*] 获取目录列表信息")
@@ -81,10 +90,11 @@ if __name__ == '__main__':
         print_colored_text(33, f"[*] 获取 {book['name']} 列表信息")
         for index, doc in enumerate(docs):
             created_at = datetime.strptime(doc["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d %H:%M:%S")
-            doc_list.append({"index": index, "title": doc['title'], "slug": doc['slug'], "id": doc['id'], "type": doc['type'],
-                             "created_at": doc['created_at'], "word_count": doc['word_count'], "name": book['name'],
-                             "book_id": book['id'], "book_slug": book['slug']})
-            if  settings.show_detailed:
+            doc_list.append(
+                {"index": index, "title": doc['title'], "slug": doc['slug'], "id": doc['id'], "type": doc['type'],
+                 "created_at": doc['created_at'], "word_count": doc['word_count'], "name": book['name'],
+                 "book_id": book['id'], "book_slug": book['slug']})
+            if settings.show_detailed:
                 print(index, doc['title'], doc['slug'], doc['id'], created_at, doc["word_count"])
             # TODO 删除这里
         # print(f"[*] 获取{book['name']}文章列表信息完成")
