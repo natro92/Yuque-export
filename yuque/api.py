@@ -62,7 +62,13 @@ async def _get_book_stacks(_session_key, session):
 
 
 async def get_book_stacks(_session_key):
-    async with aiohttp.ClientSession() as session:
+    """
+    获取知识库列表
+    :param _session_key:
+    :return:
+    """
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         json_response = await _get_book_stacks(_session_key, session)
         # print(json_response)
         return json_response

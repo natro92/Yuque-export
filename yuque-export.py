@@ -53,10 +53,9 @@ if __name__ == '__main__':
     if not exists('config/session'):
         with open('config/session', 'w') as f:
             f.write(read_cookie())
-    else:
-        with open('config/session', 'r') as f:
-            yuque_session = f.read()
-        os.remove('config/session')
+    with open('config/session', 'r') as f:
+        yuque_session = f.read()
+    os.remove('config/session')
     # * 拉取目录
     # * 判断Cookie是否有效
     try:
